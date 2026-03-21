@@ -36,6 +36,14 @@ const USER_AGENTS = [
   "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0",
 ];
 
+const VIEWPORTS = [
+  { width: 1920, height: 1080 },
+  { width: 1366, height: 768 },
+  { width: 390,  height: 844 },
+];
+
+const LOCALES = ["en-US", "en-IN"];
+
 // ── Helpers ──────────────────────────────────────────────────
 const sleep   = (ms) => new Promise((r) => setTimeout(r, ms));
 const rand    = (min, max) => Math.random() * (max - min) + min;
