@@ -205,7 +205,7 @@ function log(msg) {
     const page = await context.newPage();
 
     try {
-      log(`   🌐 Navigating to site...`);
+      log(`   🌐 Navigating to ${target}`);
       await page.goto(target, { waitUntil: "domcontentloaded", timeout: PAGE_TIMEOUT });
       await sleep(rand(4000, 7000));
 
