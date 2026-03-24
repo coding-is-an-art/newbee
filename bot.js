@@ -86,7 +86,9 @@ async function scanAndClickAd(page, viewport) {
   const adSelectors = [
     "ins.adsbygoogle",
     "iframe[id*='google_ads_iframe']",
-    "iframe[src*='googleads']"
+    "iframe[src*='googleads']",
+    ".adsbygoogle",
+    "div[id^='google_ads_']"
   ];
   
   let adElement = null;
@@ -126,25 +128,52 @@ async function scanAndClickAd(page, viewport) {
   log('      👁  Reading ad text…');
   await sleep(rand(500, 1500));
   log('      🖱️  Clicking ad…');
-  await page.mouse.click(hoverX, hoverY);
+
+  // Prepare to catch a new page if the ad opens in a popup/new tab
+  const [newPage] = await Promise.all([
+    page.context().waitForEvent('page').catch(() => null),
+    page.mouse.click(hoverX, hoverY)
+  ]);
+
   log('      ✅ Ad clicked!');
+  
+  let targetPage = newPage || page; // If no new page popped up, it loaded in the same frame
+  
+  if (newPage) {
+    log('      🔗 Ad opened in a new tab.');
+    await newPage.waitForLoadState('domcontentloaded', { timeout: 30000 }).catch(() => {});
+  } else {
+    log('      🔗 Ad opened in the same tab.');
+    await page.waitForLoadState('domcontentloaded', { timeout: 30000 }).catch(() => {});
+  }
 
   // 5. Viewing Ad Page
   log('      👀 Viewing ad content…');
-  await sleep(rand(10000, 20000)); // Long stay on ad page
+  await sleep(rand(8000, 15000)); // Long stay on ad page
   
-  // Ad page interaction: slow scroll
-  const adSteps = randInt(2, 4);
+  // Ad page interaction: humanoid slow scroll
+  log('      ↓ Simulating human scrolling on ad page...');
+  const adSteps = randInt(3, 6);
   for (let i = 1; i <= adSteps; i++) {
-    await page.mouse.wheel(0, rand(300, 600));
+    // Randomly scroll down or sometimes slightly up to mimic reading
+    const scrollAmount = randInt(1, 10) > 8 ? rand(-200, -50) : rand(200, 700); 
+    await targetPage.mouse.wheel(0, scrollAmount);
     log(`      ↓ Ad Scroll ${i}/${adSteps}`);
-    await sleep(rand(3000, 6000));
+    await sleep(rand(2000, 5000));
   }
 
-  // 6. Go Back
-  log('      🔙 Navigating back...');
-  await page.goBack().catch(() => {});
-  await sleep(4000);
+  // Final hesitation on the ad page
+  await sleep(rand(2000, 4000));
+
+  // 6. Go Back / Close
+  if (newPage) {
+    log('      🔙 Closing ad tab...');
+    await newPage.close().catch(() => {});
+  } else {
+    log('      🔙 Navigating back to publisher site...');
+    await page.goBack().catch(() => {});
+    await sleep(4000);
+  }
   
   return true;
 }
